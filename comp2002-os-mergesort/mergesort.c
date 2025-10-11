@@ -47,8 +47,30 @@ void merge(int leftstart, int leftend, int rightstart, int rightend){
     }
 }
 
-/* this function will be called by parallel_mergesort() as its base case. */
+/* this function will be called by parallel_mergesort() as its base case.
+ *
+ * Classic recursive (serial) mergesort implementation.
+ * - Base case: if left >= right the range has 0 or 1 element and is already sorted.
+ * - Recursive case: split into [left..mid] and [mid+1..right], sort both halves
+ *   recursively, then merge the two sorted halves using merge().
+ *
+ * Indices are inclusive: left and right are valid indexes into A.
+ */
 void my_mergesort(int left, int right){
+    /* base case: zero or one element */
+    if (left >= right) {
+        return;
+    }
+
+    /* find middle index; use left + (right-left)/2 to avoid overflow */
+    int mid = left + (right - left) / 2;
+
+    /* recursively sort left half and right half */
+    my_mergesort(left, mid);
+    my_mergesort(mid + 1, right);
+
+    /* merge the two sorted halves back into A using the helper merge() */
+    merge(left, mid, mid + 1, right);
 }
 
 /* this function will be called by the testing program. */
