@@ -1,2 +1,2 @@
-test-mergesort.exe: mergesort.c mergesort.h
+test-mergesort.o: test-mergesort.c mergesort.h
 mergesort.h:
