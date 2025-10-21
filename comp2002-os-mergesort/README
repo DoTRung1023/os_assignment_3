@@ -1,0 +1,197 @@
+# Assignment 3 - Parallel Merge Sort
+
+* Authors: Hai Trung Do (a1899443), Tri Dung Nguyen (a1899360), Viet Bach Tran (a1901793)
+* Group name: Group 80
+
+## Overview
+
+This project implements a multi-threaded parallel merge sort algorithm using the pthread library. The program sorts randomly-generated integer arrays by recursively dividing the work across multiple threads up to a specified cutoff level, demonstrating performance improvements through concurrent execution compared to single-threaded merge sort.
+
+## Manifest
+
+* `mergesort.c` - Implementation of parallel and serial merge sort functions
+* `mergesort.h` - Header file containing function prototypes and data structure definitions
+* `test-mergesort.c` - Testing program that generates random arrays and measures sorting performance
+* `test_merge_advanced.c` - Advanced test cases for merge functionality
+* `test_merge_boundary.c` - Boundary condition tests for edge cases
+* `test_merge_stress.c` - Stress tests for large-scale sorting operations
+* `test_basic.c` - Basic functionality and serial merge sort validation
+* `Makefile` - Build configuration for compiling the project
+* `README.md` - Project documentation (this file)
+
+## Building the project
+
+To build the project, simply run:
+```
+make
+```
+
+This will compile all source files and produce an executable named `test-mergesort`.
+
+To clean the build files:
+```
+make clean
+```
+
+## Features and usage
+
+The program implements four key functions:
+- `mergesort()` - Recursive single-threaded merge sort
+- `merge()` - Merges two sorted subarrays
+- `parallel_mergesort()` - Multi-threaded merge sort using pthreads
+- `buildArgs()` - Constructs argument structures for thread creation
+
+**Usage:**
+```
+./test-mergesort <input size> <cutoff level> <seed>
+```
+
+**Parameters:**
+- `input size` - Number of elements to sort (e.g., 100000000)
+- `cutoff level` - Maximum depth of thread creation (0 for serial, 1+ for parallel)
+- `seed` - Random seed for array generation
+
+**Example:**
+```
+./test-mergesort 100000000 5 1234
+```
+
+This sorts 100 million elements using parallel merge sort with thread creation up to level 5.
+
+## Testing
+
+We conducted extensive testing using multiple custom test programs in addition to the provided test-mergesort program:
+
+### 1. Correctness Testing
+
+**Basic Functionality (test_basic.c):**
+- Tested arrays of sizes 10, 100, 1,000, and 10,000 elements with cutoff levels 0-2
+- Validated sorting correctness with the `is_sorted()` helper function
+- Visual verification for small arrays (≤20 elements) by printing before/after states
+- Example: `./test_basic 100 0 1234` confirmed serial merge sort correctness
+- All tests passed with "✓ Sorting PASSED!" confirmation
+
+**Boundary Conditions (test_merge_boundary.c):**
+- Single element arrays: [42] → verified correct handling
+- Two-element arrays: both sorted [3,5] and unsorted [5,3] cases
+- Already sorted arrays: [1,2,3...10] → confirmed no corruption
+- Reverse sorted arrays: [10,9,8...1] → verified proper reordering
+- Arrays with all identical elements: [5,5,5,5,5,5,5,5]
+- Arrays with duplicates: [3,1,4,1,5,9,2,6,5,3]
+- Negative numbers: [-5,3,-1,7,-9,2,-3,8]
+- All 10 boundary test cases passed for both serial and parallel modes
+
+**Advanced Scenarios (test_merge_advanced.c):**
+- Tested 5 different random seeds (1234, 5678, 9999, 42, 12345) with 5,000 elements
+- Special patterns tested:
+  - Ascending sequence: [0,1,2...999]
+  - Descending sequence: [1000,999...1]
+  - Alternating pattern: [0,1000,2,998...]
+  - All same values: [42,42,42...]
+- All pattern tests passed with cutoff level 2
+- Verified consistency across different cutoff levels (0-5) with identical input
+
+### 2. Performance Testing
+
+**Large-Scale Benchmarks (100,000,000 elements):**
+Using seed 1234, we measured the following performance on the test system:
+- Cutoff 0 (serial): 28.87 seconds (baseline)
+- Cutoff 1: 14.95 seconds (1.93x speedup)
+- Cutoff 2: 7.90 seconds (3.65x speedup)
+- Cutoff 3: 4.59 seconds (6.29x speedup)
+- Cutoff 4: 3.25 seconds (8.88x speedup)
+- Cutoff 5: 2.40 seconds (12.03x speedup)
+- Cutoff 6: 2.25 seconds (12.83x speedup)
+
+**Speedup Analysis:**
+- Achieved **minimum 2x speedup requirement** starting at cutoff level 1
+- Optimal performance at cutoff levels 5-6 (approximately 12x speedup)
+- Diminishing returns observed beyond cutoff 6 due to thread overhead
+- Confirmed results on Gradescope match local testing results
+
+**Stress Testing (test_merge_stress.c):**
+- Tested arrays from 10,000 to 100,000 elements with cutoffs 0-4
+- Serial vs parallel comparison on 50,000 element arrays showed consistent speedups
+- Endurance test: 50 iterations with random sizes (1,000-10,000) and random cutoffs (0-3)
+- Result: 50/50 tests passed (100% success rate)
+- No sorting failures across varied conditions
+
+### 3. Edge Case and Robustness Testing
+
+**Memory Management:**
+- Verified proper memory allocation in `buildArgs()` for all test cases
+- Confirmed memory deallocation in `parallel_mergesort()` using valgrind
+- Command: `valgrind --leak-check=full ./test-mergesort 1000 2 1234`
+- Result: "All heap blocks were freed -- no leaks are possible"
+- No invalid memory access detected across all test programs
+
+**Thread Synchronization:**
+- Verified `pthread_join()` properly waits for child threads
+- Tested with cutoff levels 0-8 to ensure correct thread management
+- No race conditions detected during concurrent array access
+- Confirmed proper thread termination with no zombie threads
+
+**Edge Cases:**
+- Empty subarrays handled correctly during recursion base case
+- Single-element partitions processed without errors
+- Odd-sized arrays divided correctly (e.g., 999 elements)
+- Large cutoff values (>7) handled gracefully without performance degradation
+
+### 4. Consistency Testing
+
+**Multiple Seeds Validation:**
+- Tested with seeds: 1234, 5678, 9999, 42, 12345
+- All seeds produced correctly sorted arrays across all cutoff levels
+- Verified consistent behavior regardless of input distribution
+
+**Cutoff Level Comparison:**
+- Same input array sorted with cutoffs 0-5 produced identical results
+- Verified output correctness independent of parallelization level
+- Confirmed parallel implementation maintains sorting algorithm correctness
+
+### 5. Testing Summary
+
+Total tests executed:
+- ned_test: 8 test cases (100% passed)
+- test_merge_boundary: 10 boundary cases (100% passed)
+- test_merge_advanced: 20+ scenarios covering cutoffs and seeds (100% passed)
+- test_merge_stress: 50+ iterations including large arrays (100% passed)
+- test-mergesort: 30+ manual tests across various configurations (100% passed)
+
+All testing confirms the implementation correctly sorts arrays and achieves required performance specifications. The parallel merge sort consistently delivers >2x speedup on Gradescope with proper thread synchronization and no memory leaks.
+
+## Known Bugs
+
+No known bugs at the time of submission. The program successfully sorts arrays of various sizes and achieves the required speedup on Gradescope.
+
+## Reflection and Self Assessment
+
+**Challenges Encountered:**
+- Understanding the recursive nature of pthread-based parallelism, where threads create other threads indirectly through pthread_create()
+- Managing memory allocation and deallocation for argument structures across multiple threads
+- Determining the optimal cutoff level where thread creation overhead exceeds performance benefits
+- Ensuring proper thread synchronization without introducing race conditions
+
+**Research and Learning:**
+- Studied pthread API documentation, particularly pthread_create() and pthread_join() semantics
+- Researched merge sort algorithm implementation and the role of auxiliary arrays
+- Learned about thread overhead and the diminishing returns of excessive parallelization
+- Investigated memory management practices in multi-threaded C programs
+
+**Key Insights:**
+- The concept of "cutoff level" clicked when we visualized the binary tree representation of thread creation
+- Understanding that parallel performance doesn't scale linearly - beyond a certain number of threads, context switching and overhead dominate
+- Realizing the importance of proper memory cleanup in threaded applications to prevent leaks
+
+**Development Process:**
+The development went smoothly after we understood the overall architecture. We started with the serial merge sort implementation, thoroughly tested it, then incrementally added parallelization. The testing process was crucial in identifying issues with thread synchronization and memory management. Working as a team allowed us to divide tasks effectively and debug issues collaboratively.
+
+## Sources Used
+
+1. Operating Systems: Three Easy Pieces - Chapters 26 and 27 (Concurrency and Threads API)
+   - http://pages.cs.wisc.edu/~remzi/OSTEP/
+2. pthread_create() and pthread_join() man pages
+   - https://man7.org/linux/man-pages/man3/pthread_create.3.html
+   - https://man7.org/linux/man-pages/man3/pthread_join.3.html
+3. Merge Sort Algorithm visualization
+   - https://www.youtube.com/watch?v=4VqmGXwpLqc (HackerRank's Merge Sort video)

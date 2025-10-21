@@ -3,152 +3,98 @@
 #include <string.h>
 #include "mergesort.h"
 
-/* Test arrays - global as required */
-int *A;
-int *B;
-int cutoff = 0;
-
-void test_boundary_conditions() {
-    printf("=== Testing Boundary Conditions ===\n");
-    
-    /* Test 1: Merge at the very beginning of array */
-    printf("\nTest 1: Merge at array start\n");
-    A = (int*)malloc(6 * sizeof(int));
-    B = (int*)malloc(6 * sizeof(int));
-    
-    int data1[] = {3, 5, 7, 1, 2, 4};  /* [0-2] and [3-5] */
-    memcpy(A, data1, 6 * sizeof(int));
-    
-    printf("Before: ");
-    int i;
-    for (i = 0; i < 6; i++) printf("%d ", A[i]);
-    printf("\n");
-    
-    merge(0, 2, 3, 5);
-    
-    printf("After:  ");
-    for (i = 0; i < 6; i++) printf("%d ", A[i]);
-    printf("\n");
-    
-    /* Check if first 6 elements are sorted */
-    int sorted = 1;
-    for (i = 0; i < 5; i++) {
-        if (A[i] > A[i+1]) {
-            sorted = 0;
-            break;
+int is_sorted(int *arr, int size) {
+    for (int i = 0; i < size - 1; i++) {
+        if (arr[i] > arr[i + 1]) {
+            return 0;
         }
     }
-    printf("Result: %s\n", sorted ? "PASS" : "FAIL");
-    
-    free(A);
-    free(B);
-    
-    /* Test 2: Single element subarrays */
-    printf("\nTest 2: Two single-element arrays\n");
-    A = (int*)malloc(2 * sizeof(int));
-    B = (int*)malloc(2 * sizeof(int));
-    
-    A[0] = 10;
-    A[1] = 5;
-    
-    printf("Before: A[0]=%d, A[1]=%d\n", A[0], A[1]);
-    merge(0, 0, 1, 1);
-    printf("After:  A[0]=%d, A[1]=%d\n", A[0], A[1]);
-    printf("Result: %s\n", (A[0] == 5 && A[1] == 10) ? "PASS" : "FAIL");
-    
-    free(A);
-    free(B);
-    
-    /* Test 3: Already perfectly sorted */
-    printf("\nTest 3: Already sorted subarrays\n");
-    A = (int*)malloc(6 * sizeof(int));
-    B = (int*)malloc(6 * sizeof(int));
-    
-    int data3[] = {1, 3, 5, 2, 4, 6};
-    memcpy(A, data3, 6 * sizeof(int));
-    
-    printf("Before: ");
-    for (i = 0; i < 6; i++) printf("%d ", A[i]);
-    printf("\n");
-    
-    merge(0, 2, 3, 5);
-    
-    printf("After:  ");
-    for (i = 0; i < 6; i++) printf("%d ", A[i]);
-    printf("\n");
-    
-    /* Expected: 1, 2, 3, 4, 5, 6 */
-    int expected3[] = {1, 2, 3, 4, 5, 6};
-    int match = 1;
-    for (i = 0; i < 6; i++) {
-        if (A[i] != expected3[i]) {
-            match = 0;
-            break;
-        }
-    }
-    printf("Result: %s\n", match ? "PASS" : "FAIL");
-    
-    free(A);
-    free(B);
+    return 1;
 }
 
-void test_memory_correctness() {
-    printf("\n=== Testing Memory Usage Correctness ===\n");
-    
-    printf("Test: Verify B array is used as temporary storage\n");
-    
-    A = (int*)malloc(4 * sizeof(int));
-    B = (int*)malloc(4 * sizeof(int));
-    
-    /* Initialize B with recognizable values */
-    int i;
-    for (i = 0; i < 4; i++) {
-        B[i] = 9999;
+void print_array(int *arr, int size) {
+    printf("[");
+    for (int i = 0; i < size; i++) {
+        printf("%d", arr[i]);
+        if (i < size - 1) printf(", ");
     }
+    printf("]\n");
+}
+
+void run_test(const char *test_name, int *input, int size, int cutoff_level) {
+    printf("\n--- %s ---\n", test_name);
     
-    A[0] = 3; A[1] = 7;  /* left: [0,1] */
-    A[2] = 1; A[3] = 5;  /* right: [2,3] */
+    // Allocate arrays
+    A = (int *)malloc(size * sizeof(int));
+    B = (int *)malloc(size * sizeof(int));
     
-    printf("A before: ");
-    for (i = 0; i < 4; i++) printf("%d ", A[i]);
-    printf("\n");
+    // Copy input to A
+    memcpy(A, input, size * sizeof(int));
     
-    printf("B before: ");
-    for (i = 0; i < 4; i++) printf("%d ", B[i]);
-    printf("\n");
+    printf("Before: ");
+    print_array(A, size);
     
-    merge(0, 1, 2, 3);
+    cutoff = cutoff_level;
+    struct argument *arg = buildArgs(0, size - 1, 0);
+    parallel_mergesort(arg);
     
-    printf("A after:  ");
-    for (i = 0; i < 4; i++) printf("%d ", A[i]);
-    printf("\n");
+    printf("After:  ");
+    print_array(A, size);
     
-    printf("B after:  ");
-    for (i = 0; i < 4; i++) printf("%d ", B[i]);
-    printf("\n");
-    
-    /* A should be sorted: 1, 3, 5, 7 */
-    int expected[] = {1, 3, 5, 7};
-    int correct = 1;
-    for (i = 0; i < 4; i++) {
-        if (A[i] != expected[i]) {
-            correct = 0;
-            break;
-        }
+    if (is_sorted(A, size)) {
+        printf("✓ PASSED\n");
+    } else {
+        printf("✗ FAILED\n");
     }
-    
-    printf("Final result correct: %s\n", correct ? "YES" : "NO");
-    printf("B was used as temp storage: %s\n", 
-           (B[0] != 9999 || B[1] != 9999) ? "YES" : "NO");
     
     free(A);
     free(B);
 }
 
 int main() {
-    printf("Comprehensive boundary and correctness testing...\n");
-    test_boundary_conditions();
-    test_memory_correctness();
-    printf("\nAll boundary tests completed!\n");
+    printf("=== BOUNDARY CONDITION TESTS ===\n");
+    
+    // Test 1: Single element
+    int test1[] = {42};
+    run_test("Single Element", test1, 1, 0);
+    
+    // Test 2: Two elements (unsorted)
+    int test2[] = {5, 3};
+    run_test("Two Elements (Unsorted)", test2, 2, 0);
+    
+    // Test 3: Two elements (sorted)
+    int test3[] = {3, 5};
+    run_test("Two Elements (Sorted)", test3, 2, 0);
+    
+    // Test 4: Already sorted array
+    int test4[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    run_test("Already Sorted", test4, 10, 0);
+    
+    // Test 5: Reverse sorted array
+    int test5[] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+    run_test("Reverse Sorted", test5, 10, 0);
+    
+    // Test 6: All same elements
+    int test6[] = {5, 5, 5, 5, 5, 5, 5, 5};
+    run_test("All Same Elements", test6, 8, 0);
+    
+    // Test 7: Array with duplicates
+    int test7[] = {3, 1, 4, 1, 5, 9, 2, 6, 5, 3};
+    run_test("Array with Duplicates", test7, 10, 0);
+    
+    // Test 8: Array with negative numbers
+    int test8[] = {-5, 3, -1, 7, -9, 2, -3, 8};
+    run_test("Negative Numbers", test8, 8, 0);
+    
+    // Test 9: Small array with parallel (cutoff 1)
+    int test9[] = {9, 3, 7, 1, 5, 2, 8, 4, 6};
+    run_test("Small Array (Parallel cutoff=1)", test9, 9, 1);
+    
+    // Test 10: Small array with parallel (cutoff 2)
+    int test10[] = {16, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15};
+    run_test("16 Elements (Parallel cutoff=2)", test10, 16, 2);
+    
+    printf("\n=== ALL BOUNDARY TESTS COMPLETED ===\n");
+    
     return 0;
 }

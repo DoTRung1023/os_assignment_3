@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/dotrung67/Documents/Adelaide/2025 Sem 2/OS/ass/3/os_assignment_3/comp2002-os-mergesort",
+      "program": "/Users/dotrung67/Documents/Adelaide/2025 Sem 2/OS/ass/3/os_assignment_3/comp2002-os-mergesort/build/Debug/outDebug"
+    }
+  ]
+}

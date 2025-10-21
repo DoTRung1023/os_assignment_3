@@ -1,140 +1,156 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <string.h>
 #include "mergesort.h"
 
-/* Test arrays - need to be global as required by mergesort.h */
-int *A;
-int *B;
-int cutoff = 0; /* Not used in this test but required by header */
-
-void test_arbitrary_positions() {
-    printf("\n=== Testing merge with arbitrary array positions ===\n");
-    
-    /* Create a larger array where we'll merge subarrays in the middle */
-    int size = 10;
-    A = (int*)malloc(size * sizeof(int));
-    B = (int*)malloc(size * sizeof(int));
-    
-    /* Initialize array: [0, 1, 3, 5, 2, 4, 6, 7, 8, 9] */
-    /*                    unused  left   right  unused  */
-    /*                   [0,1]   [2,4]  [5,7]   [8,9]   */
-    int data[] = {0, 1, 1, 3, 5, 2, 4, 6, 7, 8};
-    memcpy(A, data, size * sizeof(int));
-    
-    printf("Original array: ");
-    int i;
-    for (i = 0; i < size; i++) {
-        printf("%d ", A[i]);
-    }
-    printf("\n");
-    
-    printf("Merging A[2-4] with A[5-7]\n");
-    printf("Left subarray A[2-4]: ");
-    for (i = 2; i <= 4; i++) {
-        printf("%d ", A[i]);
-    }
-    printf("\n");
-    
-    printf("Right subarray A[5-7]: ");
-    for (i = 5; i <= 7; i++) {
-        printf("%d ", A[i]);
-    }
-    printf("\n");
-    
-    /* Merge subarrays at positions [2-4] and [5-7] */
-    merge(2, 4, 5, 7);
-    
-    printf("After merge: ");
-    for (i = 0; i < size; i++) {
-        printf("%d ", A[i]);
-    }
-    printf("\n");
-    
-    /* Check that positions 2-7 are sorted */
-    printf("Merged section A[2-7]: ");
-    for (i = 2; i <= 7; i++) {
-        printf("%d ", A[i]);
-    }
-    printf("\n");
-    
-    /* Verify it's sorted */
-    int sorted = 1;
-    for (i = 2; i < 7; i++) {
-        if (A[i] > A[i+1]) {
-            sorted = 0;
-            break;
+int is_sorted(int *arr, int size) {
+    for (int i = 0; i < size - 1; i++) {
+        if (arr[i] > arr[i + 1]) {
+            return 0;
         }
     }
-    
-    printf("Merged section is sorted: %s\n", sorted ? "YES" : "NO");
-    printf("Expected merged section: 1 2 3 4 5 6\n");
-    
-    free(A);
-    free(B);
+    return 1;
 }
 
-void test_edge_cases() {
-    printf("\n=== Testing edge cases ===\n");
+void test_different_cutoffs(int size, int seed) {
+    printf("\n=== Testing Different Cutoff Levels (size=%d, seed=%d) ===\n", size, seed);
     
-    /* Test case: Adjacent single elements */
-    printf("\nTest: Adjacent single elements\n");
-    A = (int*)malloc(2 * sizeof(int));
-    B = (int*)malloc(2 * sizeof(int));
+    srand(seed);
     
-    A[0] = 5;
-    A[1] = 3;
+    // Generate test array once
+    int *original = (int *)malloc(size * sizeof(int));
+    for (int i = 0; i < size; i++) {
+        original[i] = rand() % 10000;
+    }
     
-    printf("Before: A[0]=%d, A[1]=%d\n", A[0], A[1]);
-    merge(0, 0, 1, 1);  /* merge A[0] with A[1] */
-    printf("After:  A[0]=%d, A[1]=%d\n", A[0], A[1]);
-    printf("Result: %s\n", (A[0] == 3 && A[1] == 5) ? "PASS" : "FAIL");
+    // Test cutoff levels 0 through 5
+    for (int level = 0; level <= 5; level++) {
+        A = (int *)malloc(size * sizeof(int));
+        B = (int *)malloc(size * sizeof(int));
+        
+        // Copy original array
+        memcpy(A, original, size * sizeof(int));
+        
+        cutoff = level;
+        
+        clock_t start = clock();
+        struct argument *arg = buildArgs(0, size - 1, 0);
+        parallel_mergesort(arg);
+        clock_t end = clock();
+        
+        double time_spent = (double)(end - start) / CLOCKS_PER_SEC;
+        
+        if (is_sorted(A, size)) {
+            printf("Cutoff %d: ✓ PASSED (%.4f seconds)\n", level, time_spent);
+        } else {
+            printf("Cutoff %d: ✗ FAILED\n", level);
+        }
+        
+        free(A);
+        free(B);
+    }
     
+    free(original);
+}
+
+void test_multiple_seeds(int size, int cutoff_level) {
+    printf("\n=== Testing Multiple Seeds (size=%d, cutoff=%d) ===\n", size, cutoff_level);
+    
+    int seeds[] = {1234, 5678, 9999, 42, 12345};
+    int num_seeds = 5;
+    
+    for (int i = 0; i < num_seeds; i++) {
+        srand(seeds[i]);
+        
+        A = (int *)malloc(size * sizeof(int));
+        B = (int *)malloc(size * sizeof(int));
+        
+        for (int j = 0; j < size; j++) {
+            A[j] = rand() % 10000;
+        }
+        
+        cutoff = cutoff_level;
+        struct argument *arg = buildArgs(0, size - 1, 0);
+        parallel_mergesort(arg);
+        
+        if (is_sorted(A, size)) {
+            printf("Seed %d: ✓ PASSED\n", seeds[i]);
+        } else {
+            printf("Seed %d: ✗ FAILED\n", seeds[i]);
+        }
+        
+        free(A);
+        free(B);
+    }
+}
+
+void test_special_patterns(int size) {
+    printf("\n=== Testing Special Patterns (size=%d) ===\n", size);
+    
+    // Test 1: Ascending order
+    printf("Pattern: Ascending... ");
+    A = (int *)malloc(size * sizeof(int));
+    B = (int *)malloc(size * sizeof(int));
+    for (int i = 0; i < size; i++) A[i] = i;
+    
+    cutoff = 2;
+    struct argument *arg = buildArgs(0, size - 1, 0);
+    parallel_mergesort(arg);
+    printf("%s\n", is_sorted(A, size) ? "✓ PASSED" : "✗ FAILED");
     free(A);
     free(B);
     
-    /* Test case: Same values */
-    printf("\nTest: Arrays with identical values\n");
-    A = (int*)malloc(4 * sizeof(int));
-    B = (int*)malloc(4 * sizeof(int));
+    // Test 2: Descending order
+    printf("Pattern: Descending... ");
+    A = (int *)malloc(size * sizeof(int));
+    B = (int *)malloc(size * sizeof(int));
+    for (int i = 0; i < size; i++) A[i] = size - i;
     
-    A[0] = 5; A[1] = 5;  /* left subarray */
-    A[2] = 5; A[3] = 5;  /* right subarray */
+    arg = buildArgs(0, size - 1, 0);
+    parallel_mergesort(arg);
+    printf("%s\n", is_sorted(A, size) ? "✓ PASSED" : "✗ FAILED");
+    free(A);
+    free(B);
     
-    printf("Before: ");
-    int i;
-    for (i = 0; i < 4; i++) {
-        printf("%d ", A[i]);
-    }
-    printf("\n");
+    // Test 3: Alternating high-low
+    printf("Pattern: Alternating... ");
+    A = (int *)malloc(size * sizeof(int));
+    B = (int *)malloc(size * sizeof(int));
+    for (int i = 0; i < size; i++) A[i] = (i % 2 == 0) ? i : size - i;
     
-    merge(0, 1, 2, 3);
+    arg = buildArgs(0, size - 1, 0);
+    parallel_mergesort(arg);
+    printf("%s\n", is_sorted(A, size) ? "✓ PASSED" : "✗ FAILED");
+    free(A);
+    free(B);
     
-    printf("After:  ");
-    for (i = 0; i < 4; i++) {
-        printf("%d ", A[i]);
-    }
-    printf("\n");
+    // Test 4: All same values
+    printf("Pattern: All Same... ");
+    A = (int *)malloc(size * sizeof(int));
+    B = (int *)malloc(size * sizeof(int));
+    for (int i = 0; i < size; i++) A[i] = 42;
     
-    int all_five = 1;
-    for (i = 0; i < 4; i++) {
-        if (A[i] != 5) {
-            all_five = 0;
-            break;
-        }
-    }
-    printf("Result: %s\n", all_five ? "PASS" : "FAIL");
-    
+    arg = buildArgs(0, size - 1, 0);
+    parallel_mergesort(arg);
+    printf("%s\n", is_sorted(A, size) ? "✓ PASSED" : "✗ FAILED");
     free(A);
     free(B);
 }
 
 int main() {
-    printf("Advanced testing of merge function...\n");
+    printf("=== ADVANCED MERGE SORT TESTS ===\n");
     
-    test_arbitrary_positions();
-    test_edge_cases();
+    // Test 1: Different cutoff levels
+    test_different_cutoffs(1000, 1234);
     
-    printf("\nAll advanced tests completed!\n");
+    // Test 2: Multiple random seeds
+    test_multiple_seeds(5000, 2);
+    
+    // Test 3: Special patterns
+    test_special_patterns(1000);
+    
+    printf("\n=== ALL ADVANCED TESTS COMPLETED ===\n");
+    
     return 0;
 }

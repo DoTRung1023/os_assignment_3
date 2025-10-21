@@ -1,12 +1,26 @@
 CC = gcc
-CFLAGS = -Wall -Wpointer-arith -Wstrict-prototypes -std=gnu89 -fPIC -MMD -MP -lpthread
+CFLAGS = -Wall -pthread
+TARGET = test-mergesort
+EXTRA_TESTS = test_basic test_merge_advanced test_merge_boundary test_merge_stress
 
-all: test-mergesort
+all: $(TARGET)
 
-#This builds an executable 
-test-mergesort: test-mergesort.o mergesort.o
-	$(CC) $(CFLAGS) -o $@ $?
+$(TARGET): test-mergesort.c mergesort.c
+	$(CC) $(CFLAGS) -o $(TARGET) test-mergesort.c mergesort.c
 
-.PHONY: clean
+tests: $(EXTRA_TESTS)
+
+test_basic: test_basic.c mergesort.c
+	$(CC) $(CFLAGS) -o test_basic test_basic.c mergesort.c
+
+test_merge_advanced: test_merge_advanced.c mergesort.c
+	$(CC) $(CFLAGS) -o test_merge_advanced test_merge_advanced.c mergesort.c
+
+test_merge_boundary: test_merge_boundary.c mergesort.c
+	$(CC) $(CFLAGS) -o test_merge_boundary test_merge_boundary.c mergesort.c
+
+test_merge_stress: test_merge_stress.c mergesort.c
+	$(CC) $(CFLAGS) -o test_merge_stress test_merge_stress.c mergesort.c
+
 clean:
-	/bin/rm -f *.o *.d test-mergesort
+	rm -f $(TARGET) $(EXTRA_TESTS)
