@@ -3,6 +3,11 @@
 #include <time.h>
 #include "mergesort.h"
 
+// Global variables
+int cutoff;
+int *A;
+int *B;
+
 // Function to check if array is sorted
 int is_sorted(int *arr, int size) {
     for (int i = 0; i < size - 1; i++) {

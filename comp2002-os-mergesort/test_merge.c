@@ -3,10 +3,10 @@
 #include <string.h>
 #include "mergesort.h"
 
-/* Test arrays - need to be global as required by mergesort.h */
+// Global variables
+int cutoff;
 int *A;
 int *B;
-int cutoff = 0; /* Not used in this test but required by header */
 
 void print_array(int *arr, int start, int end, const char* name) {
     printf("%s[%d-%d]: ", name, start, end);
@@ -22,7 +22,7 @@ void test_merge_case(const char* test_name, int* left_data, int left_size,
     
     int total_size = left_size + right_size;
     
-    /* Setup arrays A and B */
+    /* Allocate the global arrays A and B */
     A = (int*)malloc(total_size * sizeof(int));
     B = (int*)malloc(total_size * sizeof(int));
     
@@ -57,6 +57,9 @@ void test_merge_case(const char* test_name, int* left_data, int left_size,
 }
 
 int main() {
+    /* Set the global cutoff value (not used in this test but required) */
+    cutoff = 0;
+    
     printf("Testing merge function...\n");
     
     /* Test Case 1: Basic merge of two sorted arrays */
