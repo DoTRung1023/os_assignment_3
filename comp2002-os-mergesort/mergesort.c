@@ -88,7 +88,8 @@ void * parallel_mergesort(void *arg){
     /* base case 2: reached cutoff level, switch to serial mergesort */
     if (level >= cutoff) {
         my_mergesort(left, right);
-        /* child threads free their own arg; root is freed by test driver */
+        /* child threads free their own arg; 
+        root is freed by test driver */
         if (level > 0) {
             free(arg);
         }
